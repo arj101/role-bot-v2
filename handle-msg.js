@@ -29,7 +29,7 @@ function invalidateMessage(msg) {
  */
 
 async function handleMessage(msg, db, pointsManager) {
-    if (invalidateMessage(msg)) return;
+    if (invalidateMessage(msg) || pointsManager.newPoints[msg.guildId]?.[msg.author.id]) return;
 
     let currPoints = await db.readMemberData(
         msg.guildId,

@@ -15,7 +15,7 @@ async function execute(interaction, db) {
     let rolesArr = Object.keys(roles).sort((a, b) => roles[a] - roles[b]);
     for (const roleId of rolesArr) {
         let roleName = (await interaction.guild.roles.fetch(roleId)).name;
-        embed.addField(roleName, `${roles[roleId]} ${process.env.POINT_UNIT}`);
+        embed.addField(roleName, `${roles[roleId]} ${await db.readPointUnit(interaction.guildId)}`);
     }
 
     await interaction.editReply({ embeds: [embed] });

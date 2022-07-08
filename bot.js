@@ -9,9 +9,7 @@ const { loadFonts } = require("./rank-card");
 
 require("dotenv").config();
 if (!process.env.FIREBASE_CREDENTIALS) {
-    process.env.FIREBASE_CREDENTIALS = fs.readFileSync(
-        process.env.FIREBASE_CREDENTIALS_PATH
-    );
+    process.env.FIREBASE_CREDENTIALS = fs.readFileSync(process.env.FIREBASE_CREDENTIALS_PATH);
 }
 if (!process.env.POINT_UNIT) process.env.POINT_UNIT = "points";
 if (!process.NO_REGISTER_FONTS) {
@@ -19,19 +17,16 @@ if (!process.NO_REGISTER_FONTS) {
 }
 
 const client = new Client({
-    intents: [
-        Intents.FLAGS.GUILDS,
-        Intents.FLAGS.GUILD_MESSAGES,
-        Intents.FLAGS.GUILD_PRESENCES,
-    ],
+    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_PRESENCES]
 });
 
 const db = new Database();
 const pointsManager = new PointsManager(db);
 pointsManager.startPointUpdationLoop(10 * 1000);
 
+/* */
 client.once("ready", (c) => {
-    console.log(`Ready! Logged in as ${c.user.tag}`);
+    console.log(`Ready! Logged in as Gio the best!` /*${c.user.tag}*/);
 });
 
 client.on("interactionCreate", (interaction) => {
@@ -42,9 +37,8 @@ client.on("interactionCreate", (interaction) => {
             commands[commandName](interaction, db);
         } catch (e) {
             interaction.reply({
-                content:
-                    "Uh oh, something went wrong during the command execution :(",
-                ephemeral: true,
+                content: "Uh oh, something went wrong during the command execution :(",
+                ephemeral: true
             });
             console.error(e);
         }

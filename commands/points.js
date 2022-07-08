@@ -10,7 +10,6 @@ const { createRankCard, skeletonRankCard } = require("../rank-card");
  */
 async function execute(interaction, db) {
     await interaction.deferReply();
-
     await interaction.editReply({
         files: [skeletonRankCard()],
     });
@@ -32,11 +31,10 @@ async function execute(interaction, db) {
         files: [
             await createRankCard(
                 interaction,
-                interaction.client,
                 user,
-                interaction.guildId,
                 points,
-                roles
+                roles,
+                await db.readPointUnit(interaction.guildId)
             ),
         ],
     });

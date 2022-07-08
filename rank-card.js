@@ -6,15 +6,15 @@ const { UserFlags } = require("discord-api-types/v9");
 
 function loadFonts() {
     registerFont(path.join(__dirname, "/fonts/TwitterColorEmoji-SVGinOT.ttf"), {
-        family: "Twitter Color Emoji",
+        family: "Twitter Color Emoji"
     });
 
     registerFont(path.join(__dirname, "/fonts/Poppins-Regular.ttf"), {
-        family: "Poppins",
+        family: "Poppins"
     });
 
     registerFont(path.join(__dirname, "/fonts/Poppins-SemiBold.ttf"), {
-        family: "Poppins Bold",
+        family: "Poppins Bold"
     });
 }
 
@@ -77,25 +77,17 @@ function skeletonRankCard() {
  * @returns
  */
 
-async function createRankCard(
-    interaction,
-    client,
-    user,
-    guildId,
-    points,
-    roles
-) {
+async function createRankCard(interaction, user, points, roles, pointUnit) {
     const member = await interaction.guild.members.fetch({
         user,
-        withPresences: true,
+        withPresences: true
     });
-    console.log(member);
     const name = member.displayName;
     const avatarURL = user.displayAvatarURL({
-        format: "png",
+        format: "png"
     });
     const tagName = user.tag;
-    const status = member.presence.status;
+    const status = member.presence?.status;
     roles = roles ? roles : {};
 
     const canvas = createCanvas(1516, 492);
@@ -168,11 +160,7 @@ async function createRankCard(
 
     ctx.font = `${fontHeight}px Poppins Extra Bold`;
     ctx.fillStyle = "rgba(39, 152, 239, 1)";
-    ctx.fillText(
-        pointsFormatted,
-        1416 - ctx.measureText(pointsFormatted).width,
-        57 + fontHeight
-    );
+    ctx.fillText(pointsFormatted, 1416 - ctx.measureText(pointsFormatted).width, 57 + fontHeight);
 
     let pointsWidth = ctx.measureText(pointsFormatted).width;
 
@@ -183,18 +171,9 @@ async function createRankCard(
 
     ctx.fillStyle = "rgba(255, 255, 255, 1)";
 
-    if (
-        ctx.measureText(formatedMemberName).width + 502 >
-        1416 - pointsWidth - 100
-    ) {
-        while (
-            ctx.measureText(formatedMemberName).width + 502 >
-            1416 - pointsWidth - 100
-        ) {
-            formatedMemberName = formatedMemberName.slice(
-                0,
-                formatedMemberName.length - 1
-            );
+    if (ctx.measureText(formatedMemberName).width + 502 > 1416 - pointsWidth - 100) {
+        while (ctx.measureText(formatedMemberName).width + 502 > 1416 - pointsWidth - 100) {
+            formatedMemberName = formatedMemberName.slice(0, formatedMemberName.length - 1);
         }
 
         formatedMemberName = formatedMemberName.trim() + "...";
@@ -213,11 +192,7 @@ async function createRankCard(
 
     if (nextRankPoint != Infinity) {
         let role2 = nextRank;
-        ctx.fillText(
-            role2,
-            1416 - ctx.measureText(role2).width,
-            258 + fontHeight
-        );
+        ctx.fillText(role2, 1416 - ctx.measureText(role2).width, 258 + fontHeight);
 
         if (currentRankPoint != -1) {
             ctx.fillText(currentRank, 502, 258 + fontHeight);
@@ -225,21 +200,13 @@ async function createRankCard(
     } else if (currentRankPoint != -1) {
         fontHeight = 64;
         ctx.font = `${fontHeight}px Poppins Semi Bold`;
-        ctx.fillText(
-            currentRank,
-            958.5 - ctx.measureText(currentRank).width / 2,
-            310 + fontHeight
-        );
+        ctx.fillText(currentRank, 958.5 - ctx.measureText(currentRank).width / 2, 310 + fontHeight);
     }
 
     fontHeight = 36;
     ctx.font = `${fontHeight}px Poppins`;
     ctx.fillStyle = "rgba(175, 175, 175, 1)";
-    ctx.fillText(
-        `${process.env.POINT_UNIT}`,
-        1416 - ctx.measureText(`${process.env.POINT_UNIT}`).width,
-        172 + fontHeight
-    );
+    ctx.fillText(`${pointUnit}`, 1416 - ctx.measureText(`${pointUnit}`).width, 172 + fontHeight);
 
     ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
     ctx.shadowBlur = 20;
@@ -251,15 +218,7 @@ async function createRankCard(
     let image = await loadImage(avatarURL);
 
     drawRoundedRectangle(ctx, 71, 71, 350, 350, 175);
-    drawRoundedStrokeRectangle(
-        ctx,
-        71,
-        71,
-        350,
-        350,
-        175,
-        "rgba(105, 105, 105, 1)"
-    );
+    drawRoundedStrokeRectangle(ctx, 71, 71, 350, 350, 175, "rgba(105, 105, 105, 1)", 14);
 
     ctx.save();
     ctx.clip();

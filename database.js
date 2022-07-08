@@ -196,7 +196,7 @@ class Database {
         const ref = this.ref(guildId, memberId);
         try {
             delete this.dbLocal[guildId][memberId];
-        } catch (_) {}
+        } catch (_) { }
         return ref.remove();
     }
 
@@ -324,6 +324,58 @@ class Database {
             });
         });
     }
+
+
+    /**
+     *
+     * @param {string} guildId
+     * @returns {Promise<any, Error>}
+     */
+    readPointUnit(guildId) {
+        return new Promise((resolve, _reject) => {
+            const localPointUnit = process.env.POINT_UNIT;
+            try {
+                if (this.dbLocal[guildId].config.pointUnit) {
+                    resolve(this.dbLocal[guildId].config.pointUnit);
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                const ref = this.ref(guildId).child("config/pointUnit");
+                ref.once(
+                    "value",
+                    (snapshot) => {
+                        const val = snapshot.val();
+                        if (val) this.cacheLocalGuildConfig(guildId, "pointUnit", val);
+                        resolve(val ? val : localPointUnit);
+                    },
+                    (err) => resolve(localPointUnit)
+                );
+            }
+        })
+    }
+
+
+    /**
+     *
+     * @param {string} guildId
+     * @param {string} unit
+     * @returns {Promise<void, Error>}
+     */
+    writePointUnit(guildId, unit) {
+        return new Promise((resolve, reject) => {
+            const ref = this.ref(guildId).child("config/pointUnit");
+            ref.set(unit, (err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    this.cacheLocalGuildConfig(guildId, "pointUnit", unit);
+                    resolve();
+                }
+            });
+        });
+    }
+
 }
 
 module.exports = Database;
