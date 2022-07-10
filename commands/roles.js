@@ -11,12 +11,15 @@ async function execute(interaction, db) {
     if (!roles) roles = {};
 
     let embed = new MessageEmbed().setTitle("Roles");
+    embed.setColor("#2798EF")
+
 
     let rolesArr = Object.keys(roles).sort((a, b) => roles[a] - roles[b]);
     for (const roleId of rolesArr) {
         let roleName = (await interaction.guild.roles.fetch(roleId)).name;
-        embed.addField(roleName, `${roles[roleId]} ${await db.readPointUnit(interaction.guildId)}`);
+        embed.addField(`__${roleName}__`, `**${roles[roleId]}** ${await db.readPointUnit(interaction.guildId)}`);
     }
+    embed.setTimestamp(new Date());
 
     await interaction.editReply({ embeds: [embed] });
 }

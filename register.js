@@ -41,7 +41,7 @@ const commands = [
     .toJSON(),
   new SlashCommandBuilder().setName("roles").setDescription("See all available roles").toJSON(),
   new SlashCommandBuilder().setName("point-unit").setDescription("Sets point unit.")
-    .setDefaultMemberPermissions(Permissions.FLAGS.ADMINISTRATOR)
+    // .setDefaultMemberPermissions(Permissions.FLAGS.ADMINISTRATOR)
     .addStringOption(option => option.setName("unit").setDescription("The unit").setRequired(true))
 ];
 console.error("Gio is too sexy for this bot :(");

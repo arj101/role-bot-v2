@@ -1,21 +1,50 @@
 const path = require("node:path");
 const hexToRgba = require("hex-to-rgba");
-const { CommandInteraction, User, Client } = require("discord.js");
-const { createCanvas, loadImage, registerFont } = require("canvas");
+const { CommandInteraction, User, Client, AllowedImageSize } = require("discord.js");
+const { createCanvas, loadImage, registerFont, CanvasRenderingContext2D } = require("canvas");
 const { UserFlags } = require("discord-api-types/v9");
+const { parse, } = require('twemoji-parser')
 
 function loadFonts() {
     registerFont(path.join(__dirname, "/fonts/TwitterColorEmoji-SVGinOT.ttf"), {
         family: "Twitter Color Emoji"
     });
 
-    registerFont(path.join(__dirname, "/fonts/Poppins-Regular.ttf"), {
-        family: "Poppins"
-    });
+    registerFont(path.join(__dirname, "/fonts/Ubuntu-Bold.ttf"), {
+        family: "Ubuntu Bold"
+    })
+
+    registerFont(path.join(__dirname, "/fonts/static/NotoEmoji-Medium.ttf"), {
+        family: "Noto Emoji"
+    })
+
+    registerFont(path.join(__dirname, "/fonts/HelveticaNeue-Bold.otf"), {
+        family: "Helvetica Bold"
+    })
+
+    registerFont(path.join(__dirname, "/fonts/NotoSansSymbols-Bold.ttf"), {
+        family: "Noto Sans Symbols Bold"
+    })
+
+    registerFont(path.join(__dirname, "/fonts/NotoSans-Bold.ttf"), {
+        family: "Noto Sans Bold"
+    })
+
+    registerFont(path.join(__dirname, "/fonts/NotoSans-Regular.ttf"), {
+        family: "Noto Sans"
+    })
 
     registerFont(path.join(__dirname, "/fonts/Poppins-SemiBold.ttf"), {
-        family: "Poppins Bold"
+        family: "Poppins SemiBold"
     });
+
+    registerFont(path.join(__dirname, "/fonts/Poppins-Medium.ttf"), {
+        family: "Poppins Medium"
+    })
+
+    registerFont(path.join(__dirname, "/fonts/Poppins-Bold.ttf"), {
+        family: "Poppins Bold"
+    })
 }
 
 /**
@@ -84,11 +113,16 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
     });
     const name = member.displayName;
     const avatarURL = user.displayAvatarURL({
-        format: "png"
+        format: "png",
+        size: 512
     });
     const tagName = user.tag;
     const status = member.presence?.status;
     roles = roles ? roles : {};
+
+    const fontPrimary = 'Poppins Bold'
+    const fontSecondary = 'Poppins Medium'
+    const fontTertiary = 'Poppins SemiBold'
 
     const canvas = createCanvas(1516, 492);
     const ctx = canvas.getContext("2d");
@@ -158,16 +192,22 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
 
     let fontHeight = 96;
 
-    ctx.font = `${fontHeight}px Poppins Extra Bold`;
-    ctx.fillStyle = "rgba(39, 152, 239, 1)";
-    ctx.fillText(pointsFormatted, 1416 - ctx.measureText(pointsFormatted).width, 57 + fontHeight);
+    let fontY = 57 + fontHeight
+
+    ctx.font = `${fontHeight}px ${fontPrimary}`;
+    let grd2 = ctx.createLinearGradient(1216, (57 + fontY) / 2, 1416, (57 + fontY) / 2);
+    grd2.addColorStop(0, "rgba(122, 188, 239, 1)");
+    grd2.addColorStop(1, "rgba(39, 152, 239, 1)");
+    ctx.fillStyle = grd2;
+
+    ctx.fillText(pointsFormatted, 1416 - ctx.measureText(pointsFormatted).width, fontY);
 
     let pointsWidth = ctx.measureText(pointsFormatted).width;
 
     let formatedMemberName = name;
 
     fontHeight = 64;
-    ctx.font = `${fontHeight}px Poppins Extra Bold, Twitter Color Emoji`;
+    ctx.font = `${fontHeight}px ${fontPrimary}, Noto Sans, Ubuntu Bold, Helvetica Bold`/*, Noto Emoji`*/;
 
     ctx.fillStyle = "rgba(255, 255, 255, 1)";
 
@@ -179,16 +219,18 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
         formatedMemberName = formatedMemberName.trim() + "...";
     }
 
-    ctx.fillText(formatedMemberName, 502, 79 + fontHeight);
+    await renderEmojiText(ctx, formatedMemberName, { x: 502, y: 72 }, fontHeight, 83)
+
+    // ctx.fillText(formatedMemberName, 502, yLower);
 
     fontHeight = 36;
-    ctx.font = `${fontHeight}px Poppins`;
+    ctx.font = `${fontHeight}px ${fontTertiary} `;
     ctx.fillStyle = "rgba(175,175, 175, 1)";
     ctx.fillText(tagName, 502, 172 + fontHeight);
 
     fontHeight = 36;
     ctx.fillStyle = "rgba(255,255,255,1)";
-    ctx.font = `${fontHeight}px Poppins Semi Bold`;
+    ctx.font = `${fontHeight}px ${fontSecondary} `;
 
     if (nextRankPoint != Infinity) {
         let role2 = nextRank;
@@ -199,14 +241,14 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
         }
     } else if (currentRankPoint != -1) {
         fontHeight = 64;
-        ctx.font = `${fontHeight}px Poppins Semi Bold`;
+        ctx.font = `${fontHeight}px ${fontSecondary} `;
         ctx.fillText(currentRank, 958.5 - ctx.measureText(currentRank).width / 2, 310 + fontHeight);
     }
 
     fontHeight = 36;
-    ctx.font = `${fontHeight}px Poppins`;
+    ctx.font = `${fontHeight}px  ${fontTertiary}, Noto Sans, Helvetica Bold`;
     ctx.fillStyle = "rgba(175, 175, 175, 1)";
-    ctx.fillText(`${pointUnit}`, 1416 - ctx.measureText(`${pointUnit}`).width, 172 + fontHeight);
+    ctx.fillText(`${pointUnit} `, 1416 - ctx.measureText(`${pointUnit} `).width, 172 + fontHeight);
 
     ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
     ctx.shadowBlur = 20;
@@ -281,10 +323,10 @@ function drawRoundedStrokeRectangle(context, x, y, w, h, r, rgba, width = 10) {
 }
 
 function formatNumber(num) {
-    if (num > 999 && num < 1000000) {
+    if (num > 999 && num < 1000_000) {
         let numDivided = (num / 1000).toFixed(2);
 
-        if (num >= 100000) {
+        if (num >= 100_000) {
             numDivided = (num / 1000).toFixed(1);
         }
 
@@ -293,14 +335,63 @@ function formatNumber(num) {
         return numFormatted;
     }
 
-    if (num > 999999) {
-        let numDivided = (num / 1000000).toFixed(2);
+    if (num > 999_999 && num < 1000_000_000) {
+        let numDivided = (num / 1000_000).toFixed(2);
 
-        let numFormatted = toString(numDivided) + "M";
+        if (num > 100_000_000) {
+            numDivided = (num / 1000_000).toFixed(1)
+        }
+
+        let numFormatted = numDivided + "M";
         return numFormatted;
     }
 
+    if (num > 999_999_999) {
+        let numDivided = (num / 1000_000_000).toFixed(0)
+
+        let numFormatted = numDivided + "B"
+        return numFormatted
+    }
+
     return num;
+}
+
+/**
+ * 
+ * @param {CanvasRenderingContext2D} ctx 
+ * @param {*} text 
+ * @param {*} pos 
+ * @param {*} font 
+ * @param {*} fontSize 
+ * @param {*} emojiSize 
+ */
+async function renderEmojiText(ctx, text, pos, fontSize, emojiSize) {
+    let stringParts = [];
+    let lastIdx = 0;
+    for (const entity of parse(text)) {
+        let stringPart = text.substring(lastIdx, entity.indices[0])
+        if (stringPart.length > 0) stringParts.push({ type: 'text', content: stringPart })
+
+        stringParts.push({ type: 'emoji', emoji: entity })
+        lastIdx = entity.indices[1]
+    }
+    let stringPartLast = text.substring(lastIdx)
+    if (stringPartLast.length > 0) stringParts.push({ type: 'text', content: stringPartLast })
+
+    let lastPos = pos.x;
+    let yUpper = pos.y;
+    let yLower = pos.y + fontSize;
+    for (const part of stringParts) {
+        if (part.type == 'text') {
+            ctx.fillText(part.content, lastPos, yLower)
+            lastPos += ctx.measureText(part.content);
+        } else if (part.type == 'emoji') {
+            let emoji = await loadImage(part.emoji.url);
+            ctx.drawImage(emoji, lastPos, yUpper, emojiSize, emojiSize);
+            lastPos += emojiSize;
+        }
+    }
+
 }
 
 module.exports = { loadFonts, createRankCard, skeletonRankCard };
