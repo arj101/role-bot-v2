@@ -52,20 +52,9 @@ async function handleMessage(msg, db, pointsManager) {
 
     let newPoints = currPoints + deltaPoint;
 
-    let roleFromPt = (pt) => {
-        let ptRole;
-        let rolePt = 0;
-        for (const role of Object.keys(roles)) {
-            if (roles[role] > rolePt && roles[role] <= pt) {
-                ptRole = role;
-                rolePt = roles[role];
-            }
-        }
-        return ptRole;
-    };
 
-    let currRole = roleFromPt(currPoints);
-    let newRole = roleFromPt(newPoints);
+    let currRole = roleFromPt(roles, currPoints);
+    let newRole = roleFromPt(roles, newPoints);
 
     pointsManager.setPoints(msg.guildId, msg.author.id, newPoints);
 
@@ -118,4 +107,17 @@ async function handleLevelUp(msg, oldRoleId, newRoleId, db) {
     );
 }
 
-module.exports = handleMessage;
+function roleFromPt(roles, pt) {
+    let ptRole;
+    let rolePt = 0;
+    for (const role of Object.keys(roles)) {
+        if (roles[role] > rolePt && roles[role] <= pt) {
+            ptRole = role;
+            rolePt = roles[role];
+        }
+    }
+    return ptRole;
+
+}
+
+module.exports = { handleMessage, roleFromPt };

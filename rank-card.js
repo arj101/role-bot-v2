@@ -3,7 +3,10 @@ const hexToRgba = require("hex-to-rgba");
 const { CommandInteraction, User, Client, AllowedImageSize } = require("discord.js");
 const { createCanvas, loadImage, registerFont, CanvasRenderingContext2D } = require("canvas");
 const { UserFlags } = require("discord-api-types/v9");
-const { parse, } = require('twemoji-parser')
+const { parse } = require('twemoji-parser')
+const { Resvg } = require('@resvg/resvg-js')
+const fetch = require('node-fetch')
+
 
 function loadFonts() {
     registerFont(path.join(__dirname, "/fonts/TwitterColorEmoji-SVGinOT.ttf"), {
@@ -219,14 +222,15 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
         formatedMemberName = formatedMemberName.trim() + "...";
     }
 
-    await renderEmojiText(ctx, formatedMemberName, { x: 502, y: 72 }, fontHeight, 83)
+    await renderEmojiText(ctx, formatedMemberName, { x: 502, y: 72 }, fontHeight)
 
     // ctx.fillText(formatedMemberName, 502, yLower);
 
     fontHeight = 36;
     ctx.font = `${fontHeight}px ${fontTertiary} `;
     ctx.fillStyle = "rgba(175,175, 175, 1)";
-    ctx.fillText(tagName, 502, 172 + fontHeight);
+    await renderEmojiText(ctx, tagName, { x: 502, y: 172 }, fontHeight)
+    // ctx.fillText(tagName, 502, 172 + fontHeight);
 
     fontHeight = 36;
     ctx.fillStyle = "rgba(255,255,255,1)";
@@ -234,21 +238,26 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
 
     if (nextRankPoint != Infinity) {
         let role2 = nextRank;
-        ctx.fillText(role2, 1416 - ctx.measureText(role2).width, 258 + fontHeight);
+        // ctx.fillText(role2, 1416 - ctx.measureText(role2).width, 258 + fontHeight);
+        await renderEmojiText(ctx, role2, { x: 1416 - ctx.measureText(role2).width, y: 258 }, fontHeight)
+
 
         if (currentRankPoint != -1) {
-            ctx.fillText(currentRank, 502, 258 + fontHeight);
+            // ctx.fillText(currentRank, 502, 258 + fontHeight);
+            await renderEmojiText(ctx, currentRank, { x: 502, y: 258 }, fontHeight, fontHeight)
         }
     } else if (currentRankPoint != -1) {
         fontHeight = 64;
         ctx.font = `${fontHeight}px ${fontSecondary} `;
-        ctx.fillText(currentRank, 958.5 - ctx.measureText(currentRank).width / 2, 310 + fontHeight);
+        // ctx.fillText(currentRank, 958.5 - ctx.measureText(currentRank).width / 2, 310 + fontHeight);
+        await renderEmojiText(ctx, currentRank, { x: 958.5 - ctx.measureText(currentRank).width / 2, y: 310 }, fontHeight, fontHeight / 1.2, 5)
     }
 
     fontHeight = 36;
     ctx.font = `${fontHeight}px  ${fontTertiary}, Noto Sans, Helvetica Bold`;
     ctx.fillStyle = "rgba(175, 175, 175, 1)";
-    ctx.fillText(`${pointUnit} `, 1416 - ctx.measureText(`${pointUnit} `).width, 172 + fontHeight);
+    // ctx.fillText(`${pointUnit} `, 1416 - ctx.measureText(`${pointUnit} `).width, 172 + fontHeight);
+    await renderEmojiText(ctx, `${pointUnit}`, { x: 1416 - ctx.measureText(`${pointUnit}`).width, y: 172 }, fontHeight)
 
     ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
     ctx.shadowBlur = 20;
@@ -365,7 +374,7 @@ function formatNumber(num) {
  * @param {*} fontSize 
  * @param {*} emojiSize 
  */
-async function renderEmojiText(ctx, text, pos, fontSize, emojiSize) {
+async function renderEmojiText(ctx, text, pos, fontSize, _emojiSize, emojiYOff = 0) {
     let stringParts = [];
     let lastIdx = 0;
     for (const entity of parse(text)) {
@@ -381,13 +390,27 @@ async function renderEmojiText(ctx, text, pos, fontSize, emojiSize) {
     let lastPos = pos.x;
     let yUpper = pos.y;
     let yLower = pos.y + fontSize;
+    let emojiSize = _emojiSize || Math.round(
+        (ctx.measureText('Ipj').actualBoundingBoxAscent +
+            ctx.measureText('Ipj').actualBoundingBoxDescent)
+        * 1.2);
+
+    const emojiCache = {};
     for (const part of stringParts) {
         if (part.type == 'text') {
             ctx.fillText(part.content, lastPos, yLower)
-            lastPos += ctx.measureText(part.content);
+            lastPos += ctx.measureText(part.content).width;
         } else if (part.type == 'emoji') {
-            let emoji = await loadImage(part.emoji.url);
-            ctx.drawImage(emoji, lastPos, yUpper, emojiSize, emojiSize);
+            let svg;
+            if (!emojiCache[part.emoji.url])
+                svg = await fetch.default(part.emoji.url).then(res => res.buffer())
+
+            const emojiPng = emojiCache[part.emoji.url] || new Resvg(svg,
+                { fitTo: { mode: 'width', value: Math.round(emojiSize * 2) /*fraction doesnt work apparently*/ } }).render().asPng();
+
+            emojiCache[part.emoji.url] = emojiPng;
+            const emoji = await loadImage(emojiPng)
+            ctx.drawImage(emoji, lastPos, yUpper + fontSize / 2 - emojiSize / 2.4 + emojiYOff, emojiSize, emojiSize);
             lastPos += emojiSize;
         }
     }

@@ -42,7 +42,7 @@ async function addRole(interaction, db, currRoles, role, points) {
             async (error) =>
                 await interaction.editReply(`Error while adding role: ${error}`)
         )
-        .then(async (_) => await interaction.editReply("Done!"));
+        .then(async (_) => await interaction.editReply("Done! Please note that I don't automatically add role to members, yet(!)"));
 }
 
 /**
@@ -60,7 +60,7 @@ async function removeRole(interaction, db, currRoles, role) {
         .catch(async (e) => {
             await interaction.editReply(`Error while removing role: ${error}`);
         })
-        .then(async (_) => await interaction.editReply("Done!"));
+        .then(async (_) => await interaction.editReply("Done! Please note that I don't automatically remove role from members, yet(!)"));
 }
 
 module.exports = {

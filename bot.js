@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const Database = require("./database");
 const PointsManager = require("./points-manager");
-const handleMessage = require("./handle-msg");
+const { roleFromPt, handleMessage } = require("./handle-msg");
 const commands = require("./load-commands");
 const { loadFonts } = require("./rank-card");
 
@@ -17,7 +17,7 @@ if (!process.NO_REGISTER_FONTS) {
 }
 
 const client = new Client({
-    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_PRESENCES]
+    intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_MEMBERS]
 });
 
 const db = new Database();
@@ -32,6 +32,10 @@ client.once("ready", (c) => {
 client.on("interactionCreate", (interaction) => {
     let { commandName } = interaction;
     console.log(commandName);
+    if (interaction.guildId != '856933597767008286' && interaction.member.id != '685093043078037534') {
+        interaction.reply("No lol")
+        return;
+    }
     if (Object.keys(commands).includes(commandName)) {
         try {
             commands[commandName](interaction, db);
@@ -60,5 +64,16 @@ client.on("messageCreate", async (msg) => {
         channel.send(`An error occured while handling a message: ${e}`);
     }
 });
+
+client.on("guildMemberAdd", async (member) => {
+    try {
+        let points = await db.readMemberData(member.guild.id, member.id, "points")
+        if (points && points > 0) {
+            let roles = await db.readGuildRoleConfig(member.guild.id) || {};
+            let role = roleFromPt(roles, points);
+            await member.roles.add(await member.guild.roles.fetch(role))
+        }
+    } catch (e) { console.log(e) }
+})
 
 client.login(process.env.TOKEN);
