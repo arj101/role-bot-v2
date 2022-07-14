@@ -7,7 +7,7 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 
 // Place your client and guild ids here
 const clientId = "842033653734703135";
-const guildId = "856933597767008286";
+const guildId = process.env.GUILD_ID || "856933597767008286";
 
 const commands = [
   new SlashCommandBuilder().setName("ping").setDescription("Replies with pong! (e)").toJSON(),
@@ -40,11 +40,13 @@ const commands = [
     .setDescription("Clears database cache")
     .toJSON(),
   new SlashCommandBuilder().setName("roles").setDescription("See all available roles").toJSON(),
-  new SlashCommandBuilder().setName("point-unit").setDescription("Sets point unit.")
+  new SlashCommandBuilder().setName("leaderboard").setDescription("See the top 10 users in this guild").toJSON(),
+  new SlashCommandBuilder()
+    .setName("point-unit")
+    .setDescription("Sets point unit.")
     // .setDefaultMemberPermissions(Permissions.FLAGS.ADMINISTRATOR)
-    .addStringOption(option => option.setName("unit").setDescription("The unit").setRequired(true))
+    .addStringOption((option) => option.setName("unit").setDescription("The unit").setRequired(true))
 ];
-console.error("Gio is too sexy for this bot :(");
 
 const rest = new REST({ version: "9" }).setToken(process.env.TOKEN);
 

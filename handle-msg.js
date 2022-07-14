@@ -108,6 +108,7 @@ async function handleLevelUp(msg, oldRoleId, newRoleId, db) {
 }
 
 function roleFromPt(roles, pt) {
+    if (!roles) roles = {}
     let ptRole;
     let rolePt = 0;
     for (const role of Object.keys(roles)) {
