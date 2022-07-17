@@ -7,7 +7,8 @@ const Database = require("../database");
  */
 async function execute(interaction, db) {
     // let config = await db.readGuildRoleConfig('13256')
-    interaction.reply({ content: "pong!", ephemeral: true });
+    const someEmoji = interaction.client.emojis.resolveId('740849849687212073')
+    interaction.reply({ content: `pong! ${someEmoji}`, ephemeral: true });
 }
 
 module.exports = {

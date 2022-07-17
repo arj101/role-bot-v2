@@ -210,44 +210,71 @@ async function execute(interaction, db) {
   const pageCount = Math.ceil(best.length / 5);
   let pageIdx = 0;
 
-  let img = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx);
-
+  const pages = {}
+  pages[pageIdx] = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx)
 
   const controls = new MessageActionRow().addComponents([
-    new MessageButton().setCustomId(`${interaction.id}-first`).setDisabled(true).setLabel('⏮️').setStyle('PRIMARY'),
-    new MessageButton().setCustomId(`${interaction.id}-prev`).setLabel('⬅️').setStyle('PRIMARY'),
-    new MessageButton().setCustomId(`${interaction.id}-next`).setLabel('➡️').setStyle('PRIMARY'),
-    new MessageButton().setCustomId(`${interaction.id}-last`).setLabel('⏭️').setStyle('PRIMARY')
+    new MessageButton().setCustomId(`first`).setDisabled(true).setEmoji('997491568741195876').setStyle('PRIMARY'),
+    new MessageButton().setCustomId(`prev`).setDisabled(true).setEmoji('997492116030758952').setStyle('PRIMARY'),
+    new MessageButton().setCustomId(`next`).setEmoji('997492118949990400').setStyle('PRIMARY'),
+    new MessageButton().setCustomId(`last`).setEmoji('997492121172983920').setStyle('PRIMARY')
   ])
 
-  interaction.client.on('interactionCreate', async (interactionBtn) => {
-    if (!interactionBtn.isButton()) return;
-    // console.log(JSON.stringify(interactionBtn))
-    if (interactionBtn.customId == `${interaction.id}-next`) {
-      pageIdx++;
-      if (pageIdx > pageCount - 1) pageIdx = pageCount - 1
-      img = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx)
-      interaction.editReply({ files: [img], components: [controls] });
-    }
-    if (interactionBtn.customId == `${interaction.id}-prev`) {
-      pageIdx--;
-      if (pageIdx < 0) pageIdx = 0
-      img = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx)
-      interaction.editReply({ files: [img], components: [controls] });
-    }
-    if (interactionBtn.customId == `${interaction.id}-first`) {
-      pageIdx = 0;
-      img = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx)
-      interaction.editReply({ files: [img], components: [controls] });
-    }
-    if (interactionBtn.customId == `${interaction.id}-last`) {
-      pageIdx = pageCount - 1;
-      img = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx)
-      interaction.editReply({ files: [img], components: [controls] });
-    }
-  })
+  if (pageCount <= 1) {
+    controls.components.at(2).setDisabled(true)
+    controls.components.at(3).setDisabled(true)
+  }
 
-  interaction.editReply({ files: [img], components: [controls] });
+  /**
+   * @param {DiscordCommandInteraction} i
+   */
+  const filter = i => {
+    return (
+      controls.components.filter(c => c.customId == i.customId).length == 1 &&
+      i.user.id === interaction.user.id
+    )
+  }
+  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+  collector.on('collect', async i => {
+    let newIdx = pageIdx;
+    switch (i.customId) {
+      case 'first': newIdx = 0;
+        controls.components.forEach(c => c.setDisabled(false))
+        controls.components.at(0).setDisabled(true);
+        controls.components.at(1).setDisabled(true);
+        break;
+      case 'prev': newIdx--;
+        controls.components.forEach(c => c.setDisabled(false))
+        if (newIdx <= 0) {
+          newIdx = 0
+          controls.components.at(0).setDisabled(true);
+          controls.components.at(1).setDisabled(true);
+        };
+        break;
+      case 'next': newIdx++;
+        controls.components.forEach(c => c.setDisabled(false))
+        if (newIdx >= pageCount - 1) {
+          newIdx = pageCount - 1
+          controls.components.at(2).setDisabled(true);
+          controls.components.at(3).setDisabled(true);
+        };
+        break;
+      case 'last':
+        controls.components.forEach(c => c.setDisabled(false))
+        newIdx = pageCount - 1
+        controls.components.at(2).setDisabled(true);
+        controls.components.at(3).setDisabled(true);
+        break;
+    }
+    if (newIdx != pageIdx) {
+      pageIdx = newIdx;
+      if (!pages[pageIdx])
+        pages[pageIdx] = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx);
+    }
+    await i.update({ files: [pages[pageIdx]], components: [controls] });
+  });
+
+  interaction.editReply({ files: [pages[pageIdx]], components: [controls] });
 }
 
 /**
