@@ -16,26 +16,35 @@ CanvasRenderingContext2D.prototype.textHeight = function (text) {
   return textDimensions.actualBoundingBoxAscent + textDimensions.actualBoundingBoxDescent
 }
 
+const canvas = createCanvas(1516, 5 * 291 + 6 * 28)
+const ctx = canvas.getContext("2d")
+const bgGradients = new Map()
+
 async function drawLeaderboard(best, pointUnit, pageLimit = 5, pageIdx = 0) {
+  const timeStart = new Date().getTime();
   const height = 291;
   const spacing = 28;
 
-  const page = best.slice(pageIdx * (pageLimit - 1), (pageIdx + 1) * pageLimit)
+  const page = best.slice(pageIdx * pageLimit, (pageIdx + 1) * pageLimit)
   const idxOffset = pageIdx * pageLimit;
 
-  const canvas = createCanvas(
-    1516,
-    page.length > 0 ?
-      (height + spacing) * page.length + spacing
-      : height + 2 * spacing
-  )
-  const ctx = canvas.getContext("2d");
+  canvas.height = page.length > 0 ?
+    (height + spacing) * page.length + spacing
+    : height + 2 * spacing;
+
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
-  const bgGradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
-  bgGradient.addColorStop(0, "rgba(126, 88, 143, 1)");
-  bgGradient.addColorStop(1, "rgba(36, 115, 175, 1)");
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+
+  let bgGradient;
+  if (bgGradients.has(canvasHeight)) bgGradient = bgGradients.get(canvasHeight)
+  else {
+    bgGradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+    bgGradient.addColorStop(0, "rgba(126, 88, 143, 1)");
+    bgGradient.addColorStop(1, "rgba(36, 115, 175, 1)");
+    bgGradients.set(canvasHeight, bgGradient)
+  }
   ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
@@ -71,8 +80,8 @@ async function drawLeaderboard(best, pointUnit, pageLimit = 5, pageIdx = 0) {
     //1st 2nd 3rd etc
     ctx.fillStyle = "white";
     ctx.font = "120px Poppins Bold";
-    const rankText = String(i + 1)
-    await renderEmojiText(ctx, String(idxOffset + i + 1), { x: xoff + 165 - ctx.measureText(rankText).width, y: yoff + height / 2 - ctx.textHeight(rankText) }, 120, 120);
+    const rankText = String(idxOffset + i + 1)
+    await renderEmojiText(ctx, rankText, { x: xoff + 165 - ctx.measureText(rankText).width / 2, y: yoff + height / 2 - ctx.textHeight(rankText) }, 120, 120);
 
 
     //points
@@ -118,22 +127,23 @@ async function drawLeaderboard(best, pointUnit, pageLimit = 5, pageIdx = 0) {
     }
   }
 
+  console.log(`Rendered leaderboard in ${new Date().getTime() - timeStart}ms`)
   return canvas.toBuffer();
 }
 
 
 async function getUsers(db, guildId) {
   const loc = path.join(__dirname, "..", "leaderboards", `${guildId}.json`);
-  const maxCacheTime = 300000; //5min in millis
+  const maxCacheTime = 30 * 60 * 1000; //30min
 
   //check file creation date
   let creationTime = 0;
   if (fs.existsSync(loc)) creationTime = fs.statSync(loc).ctimeMs;
 
-  //checks if current time is less than cacheTime
   let users = [];
 
   let diff = new Date().getTime() - Math.floor(creationTime);
+  //checks if current time is less than cacheTime
   if (diff < maxCacheTime) {
     console.log("Got cached leaderboard");
     users = JSON.parse(fs.readFileSync(loc));
@@ -144,14 +154,14 @@ async function getUsers(db, guildId) {
 
     //so I can use sort command for array
     let keys = Object.keys(allUsers);
-    for (user of keys) {
+    for (const user of keys) {
       //[userId, points] or ['721377130755391578', 102]
       users.push([user, allUsers[user].points]);
     }
     users.sort((a, b) => b[1] - a[1]); //highest to lowest is b-a
 
     const json = JSON.stringify(users);
-    fs.writeFileSync(loc, json);
+    fs.writeFile(loc, json, 'utf8', () => console.log(`Successfully wrote leaderboard of guild ${guildId}`));
   }
 
   return users;
@@ -163,9 +173,9 @@ async function getUsers(db, guildId) {
  * @param {Database} db
  */
 async function execute(interaction, db) {
-  await interaction.deferReply()
+  await interaction.reply("Crunching the numbers... https://media.giphy.com/media/zPbnEgxsPJOJSD3qfr/giphy.gif");
   const guildId = interaction.guildId;
-  let limit = 10;
+  let limit = 100;
   const pointName = await db.readPointUnit(guildId);
   const users = await getUsers(db, guildId);
 
@@ -184,7 +194,7 @@ async function execute(interaction, db) {
     const id = u[0];
     const points = u[1];
     const member = members.get(id);
-    const roles = member._roles;
+    if (!member) continue;
     const user = member.user;
     let bestRole = roleFromPt(botRoles, points)
     bestRole = await interaction.guild.roles.fetch(bestRole);
@@ -234,7 +244,8 @@ async function execute(interaction, db) {
       i.user.id === interaction.user.id
     )
   }
-  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+
+  const collector = interaction.channel.createMessageComponentCollector({ filter, time: 120000 });
   collector.on('collect', async i => {
     let newIdx = pageIdx;
     switch (i.customId) {
@@ -271,10 +282,11 @@ async function execute(interaction, db) {
       if (!pages[pageIdx])
         pages[pageIdx] = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx);
     }
-    await i.update({ files: [pages[pageIdx]], components: [controls] });
-  });
 
-  interaction.editReply({ files: [pages[pageIdx]], components: [controls] });
+    try { await i.update({ content: `Page ${pageIdx + 1}/${pageCount}`, files: [pages[pageIdx]], components: [controls] }) } catch (e) { }
+  });
+  await interaction.editReply({ content: `Page ${pageIdx + 1}/${pageCount}`, files: [pages[pageIdx]], components: [controls] });
+
 }
 
 /**

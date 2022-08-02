@@ -1,7 +1,7 @@
 const path = require("node:path");
 const hexToRgba = require("hex-to-rgba");
 const { CommandInteraction, User, Client, AllowedImageSize } = require("discord.js");
-const { createCanvas, loadImage, registerFont, CanvasRenderingContext2D } = require("canvas");
+const { createCanvas, loadImage, registerFont, CanvasRenderingContext2D, CanvasGradient, } = require("canvas");
 const { UserFlags } = require("discord-api-types/v9");
 const { parse } = require("twemoji-parser");
 const { Resvg } = require("@resvg/resvg-js");
@@ -59,23 +59,26 @@ async function roleNameFromId(interaction, id) {
   return (await interaction.guild.roles.fetch(id)).name;
 }
 
+const canvas = createCanvas(1516, 492);
+const ctx = canvas.getContext("2d")
+const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+bgGradient.addColorStop(0, "rgba(44, 50, 55, 1")
+bgGradient.addColorStop(1, "rgba(33, 44, 54, 1")
+
+const skeletonGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+skeletonGradient.addColorStop(1, "rgba(50, 50, 50, 0.5)");
+skeletonGradient.addColorStop(0, "rgba(250, 250, 250, 0.1)");
+
+
 function skeletonRankCard() {
-  const canvas = createCanvas(1516, 492);
-  const ctx = canvas.getContext("2d");
-
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.rect(0, 0, canvas.width, canvas.height);
-  let grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  grd.addColorStop(0, "rgba(44, 50, 55, 1)");
-  grd.addColorStop(1, "rgba(33, 44, 54, 1)");
 
-  ctx.fillStyle = grd;
+  ctx.fillStyle = bgGradient;
   ctx.fill();
 
-  let grd2 = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  grd2.addColorStop(1, "rgba(50, 50, 50, 0.5)");
-  grd2.addColorStop(0, "rgba(250, 250, 250, 0.1)");
 
-  ctx.fillStyle = grd2;
+  ctx.fillStyle = skeletonGradient;
 
   drawRoundedRectangle(ctx, 502, 316, 914, 76, 38);
   ctx.fill();
@@ -95,6 +98,8 @@ function skeletonRankCard() {
   return canvas.toBuffer();
 }
 
+
+
 /**
  * @param {Client} client
  * @param {CommandInteraction} interaction
@@ -107,7 +112,6 @@ function skeletonRankCard() {
  * @param {*} roles
  * @returns
  */
-
 async function createRankCard(interaction, user, points, roles, pointUnit) {
   const member = await interaction.guild.members.fetch({
     user,
@@ -125,9 +129,6 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
   const fontPrimary = "Poppins Bold";
   const fontSecondary = "Poppins Medium";
   const fontTertiary = "Poppins SemiBold";
-
-  const canvas = createCanvas(1516, 492);
-  const ctx = canvas.getContext("2d");
 
   let currentRankPoint = -1;
   let currentRank;
@@ -156,12 +157,9 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
 
   ctx.beginPath();
 
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.rect(0, 0, canvas.width, canvas.height);
-  let grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  grd.addColorStop(0, "rgba(44, 50, 55, 1)");
-  grd.addColorStop(1, "rgba(33, 44, 54, 1)");
-
-  ctx.fillStyle = grd;
+  ctx.fillStyle = bgGradient;
   ctx.fill();
 
   let rankBelowPoint;
@@ -377,6 +375,8 @@ function formatNumber(num) {
   return String(num);
 }
 
+const emojiCache = new Map()
+
 /**
  *  `ctx.textAlign` is assumed to be `'left'`,
  *  `ctx.baseLine` is assumed to be `'alphabetical'`, and 
@@ -409,7 +409,6 @@ async function renderEmojiText(ctx, text, pos, fontSize, _emojiSize, emojiYOff =
   let yLower = pos.y + fontSize;
   let emojiSize = _emojiSize || Math.round((ctx.measureText("Ipj").actualBoundingBoxAscent + ctx.measureText("Ipj").actualBoundingBoxDescent) * 1.2);
 
-  const emojiCache = {};
   for (const part of stringParts) {
     if (part.type == "text") {
       strokeText ? ctx.strokeText(part.content, lastPos, yLower) : ctx.fillText(part.content, lastPos, yLower);
@@ -417,13 +416,13 @@ async function renderEmojiText(ctx, text, pos, fontSize, _emojiSize, emojiYOff =
     } else if (part.type == "emoji") {
       if (!part.emoji.url) continue
       let svg;
-      if (!emojiCache[part.emoji.url]) svg = await fetch.default(part.emoji.url).then((res) => res.buffer());
+      if (!emojiCache.has(part.emoji.url)) svg = await fetch.default(part.emoji.url).then((res) => res.buffer());
 
       const emojiPng =
-        emojiCache[part.emoji.url] ||
+        emojiCache.get(part.emoji.url) ||
         new Resvg(svg, { fitTo: { mode: "width", value: Math.round(emojiSize * 2) /*fraction doesnt work apparently*/ } }).render().asPng();
 
-      emojiCache[part.emoji.url] = emojiPng;
+      if (!emojiCache.has(part.emoji.url)) emojiCache.set(part.emoji.url, emojiPng);
       const emoji = await loadImage(emojiPng);
       ctx.drawImage(emoji, lastPos, yUpper + fontSize / 2 - emojiSize / 2.4 + emojiYOff, emojiSize, emojiSize);
       lastPos += emojiSize;

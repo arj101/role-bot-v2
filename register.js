@@ -9,12 +9,14 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 const clientId = "842033653734703135";
 const guildId = process.env.GUILD_ID || "856933597767008286";
 
+console.log(`Guild id: ${guildId}`)
+
 const commands = [
   new SlashCommandBuilder().setName("ping").setDescription("Replies with pong! (e)").toJSON(),
   new SlashCommandBuilder().setName("nothing").setDescription("Does nothing").toJSON(),
   new SlashCommandBuilder()
     .setName("points")
-    .setDescription("EEEE")
+    .setDescription("See your points, obviously...")
     .addUserOption((option) => option.setName("member").setDescription("See someone else's points").setRequired(false))
     .toJSON(),
   new SlashCommandBuilder()
@@ -40,11 +42,11 @@ const commands = [
     .setDescription("Clears database cache")
     .toJSON(),
   new SlashCommandBuilder().setName("roles").setDescription("See all available roles").toJSON(),
-  new SlashCommandBuilder().setName("leaderboard").setDescription("See the top 10 users in this guild").toJSON(),
+  new SlashCommandBuilder().setName("leaderboard").setDescription("See the top 100 users in this server").toJSON(),
   new SlashCommandBuilder()
     .setName("point-unit")
     .setDescription("Sets point unit.")
-    // .setDefaultMemberPermissions(Permissions.FLAGS.ADMINISTRATOR)
+    .setDefaultMemberPermissions(Permissions.FLAGS.ADMINISTRATOR)
     .addStringOption((option) => option.setName("unit").setDescription("The unit").setRequired(true))
 ];
 

@@ -112,7 +112,7 @@ function roleFromPt(roles, pt) {
     let ptRole;
     let rolePt = 0;
     for (const role of Object.keys(roles)) {
-        if (roles[role] > rolePt && roles[role] <= pt) {
+        if (roles[role] >= rolePt && roles[role] <= pt) {
             ptRole = role;
             rolePt = roles[role];
         }

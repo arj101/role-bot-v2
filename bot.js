@@ -31,11 +31,7 @@ client.once("ready", (c) => {
 
 client.on("interactionCreate", (interaction) => {
     let { commandName } = interaction;
-    console.log(commandName);
-    if (interaction.guildId != '856933597767008286' && interaction.member.id != '685093043078037534') {
-        interaction.reply("No lol")
-        return;
-    }
+    console.log(`command: ${commandName}`);
     if (Object.keys(commands).includes(commandName)) {
         try {
             commands[commandName](interaction, db);
