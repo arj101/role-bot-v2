@@ -65,6 +65,28 @@ const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
 bgGradient.addColorStop(0, "rgba(44, 50, 55, 1")
 bgGradient.addColorStop(1, "rgba(33, 44, 54, 1")
 
+const expr = (fn) => fn() //when you are too used to expression based language
+const bgGradients = [
+  expr(() => {
+    const grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+    grd.addColorStop(1, "rgba(70, 9, 68, 1)")
+    grd.addColorStop(0, "rgba(13, 48, 81, 1)")
+    return grd
+  }),
+  expr(() => {
+    const grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+    grd.addColorStop(1, "rgba(0, 41, 9, 1)")
+    grd.addColorStop(0, "rgba(80, 9, 9, 1)")
+    return grd
+  }),
+  expr(() => {
+    const grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+    grd.addColorStop(1, "rgba(36, 11, 54, 1)")
+    grd.addColorStop(0, "rgba(195, 20, 50, 1)")
+    return grd
+  })
+]
+
 const skeletonGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
 skeletonGradient.addColorStop(1, "rgba(50, 50, 50, 0.5)");
 skeletonGradient.addColorStop(0, "rgba(250, 250, 250, 0.1)");
@@ -159,7 +181,8 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.rect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = bgGradient;
+  const bgFill = Math.random() > 0.75 ? bgGradients[Math.round(Math.random() * (bgGradients.length - 1))] : bgGradient;
+  ctx.fillStyle = bgFill;
   ctx.fill();
 
   let rankBelowPoint;

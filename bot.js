@@ -22,7 +22,7 @@ const client = new Client({
 
 const db = new Database();
 const pointsManager = new PointsManager(db);
-pointsManager.startPointUpdationLoop(10 * 1000);
+pointsManager.startPointUpdationLoop(60 * 1000);
 
 /* */
 client.once("ready", (c) => {
