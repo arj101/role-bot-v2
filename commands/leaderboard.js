@@ -20,6 +20,8 @@ const canvas = createCanvas(1516, 5 * 291 + 6 * 28)
 const ctx = canvas.getContext("2d")
 const bgGradients = new Map()
 
+const formatter = Intl.NumberFormat('en', { 'notation': 'compact' })
+
 async function drawLeaderboard(best, pointUnit, pageLimit = 5, pageIdx = 0) {
   const timeStart = new Date().getTime();
   const height = 291;
@@ -86,7 +88,7 @@ async function drawLeaderboard(best, pointUnit, pageLimit = 5, pageIdx = 0) {
 
     //points
     ctx.font = "80px Poppins Bold";
-    const pointsText = formatNumber(page[i].points)
+    const pointsText = formatter.format(page[i].points)
     const ptTextWidth = ctx.measureText(pointsText).width;
     const ptGradient = ctx.createLinearGradient(1244, yoff + ctx.textHeight(pointsText) / 2, 1447, yoff + ctx.textHeight(pointsText) / 2);
     ptGradient.addColorStop(0, "rgba(80, 179, 255, 1)");
@@ -247,6 +249,10 @@ async function execute(interaction, db) {
 
   const collector = interaction.channel.createMessageComponentCollector({ filter, time: 120000 });
   collector.on('collect', async i => {
+
+    try { await i.deferUpdate(); } catch (e) { }
+
+
     let newIdx = pageIdx;
     switch (i.customId) {
       case 'first': newIdx = 0;
@@ -278,12 +284,17 @@ async function execute(interaction, db) {
         break;
     }
     if (newIdx != pageIdx) {
+      try { await i.editReply({ content: `Hold on... (rendering page ${newIdx + 1}) https://media.giphy.com/media/sCeDVONTypmVy/giphy.gif`, files: [], controls: [] }) } catch (e) { }
+      if (!pages[newIdx])
+        pages[newIdx] = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, newIdx);
+
       pageIdx = newIdx;
-      if (!pages[pageIdx])
-        pages[pageIdx] = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, pageIdx);
     }
 
-    try { await i.update({ content: `Page ${pageIdx + 1}/${pageCount}`, files: [pages[pageIdx]], components: [controls] }) } catch (e) { }
+
+    try { i.editReply({ content: `Page ${pageIdx + 1}/${pageCount}`, files: [pages[pageIdx]], components: [controls] }) } catch (e) {
+      i.channel.send('ERROR REEEEEE')
+    }
   });
   await interaction.editReply({ content: `Page ${pageIdx + 1}/${pageCount}`, files: [pages[pageIdx]], components: [controls] });
 

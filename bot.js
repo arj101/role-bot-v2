@@ -30,7 +30,8 @@ client.once("ready", (c) => {
 });
 
 client.on("interactionCreate", (interaction) => {
-    let { commandName } = interaction;
+    if (interaction.type !== "APPLICATION_COMMAND") return;
+    const { commandName } = interaction;
     console.log(`command: ${commandName}`);
     if (Object.keys(commands).includes(commandName)) {
         try {

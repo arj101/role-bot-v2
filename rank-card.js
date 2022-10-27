@@ -7,6 +7,9 @@ const { parse } = require("twemoji-parser");
 const { Resvg } = require("@resvg/resvg-js");
 const fetch = require("node-fetch");
 
+const formatter = Intl.NumberFormat('en', { notation: 'compact' })
+
+
 function loadFonts() {
   registerFont(path.join(__dirname, "/fonts/TwitterColorEmoji-SVGinOT.ttf"), {
     family: "Twitter Color Emoji"
@@ -211,7 +214,7 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
   ctx.fillStyle = "rgba(39, 152, 239, 1)";
   ctx.fill();
 
-  let pointsFormatted = formatNumber(points);
+  let pointsFormatted = formatter.format(points);
 
   let fontHeight = 96;
 
@@ -235,8 +238,10 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
   ctx.fillStyle = "rgba(255, 255, 255, 1)";
 
   if (ctx.measureText(formatedMemberName).width + 502 > 1416 - pointsWidth - 100) {
+
     while (ctx.measureText(formatedMemberName).width + 502 > 1416 - pointsWidth - 100) {
       formatedMemberName = formatedMemberName.slice(0, formatedMemberName.length - 1);
+      console.log(pointsWidth)
     }
 
     formatedMemberName = formatedMemberName.trim() + "...";
