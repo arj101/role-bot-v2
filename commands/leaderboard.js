@@ -62,7 +62,9 @@ async function drawLeaderboard(best, pointUnit, pageLimit = 5, pageIdx = 0) {
     return canvas.toBuffer();
   }
 
+
   for (let i = 0; i < page.length; i++) {
+
     let yoff = spacing + i * (height + spacing);
     let xoff = 23;
 
@@ -71,13 +73,15 @@ async function drawLeaderboard(best, pointUnit, pageLimit = 5, pageIdx = 0) {
     ctx.fill()
 
     //profile pic
-    const img = await loadImage(page[i].avatar);
     drawRoundedStrokeRectangle(ctx, xoff + 275, yoff + 16, 260, 260, 150, 'rgba(255, 255, 255, 0.39)', 10)
     ctx.save();
-    drawRoundedRectangle(ctx, xoff + 280, yoff + 21, 250, 250, 126)
-    ctx.clip();
-    ctx.drawImage(img, xoff + 280, yoff + 21, 250, 250);
-    ctx.restore();
+    if (page[i].avatar) {
+      const img = await loadImage(page[i].avatar);
+      drawRoundedRectangle(ctx, xoff + 280, yoff + 21, 250, 250, 126)
+      ctx.clip();
+      ctx.drawImage(img, xoff + 280, yoff + 21, 250, 250);
+      ctx.restore();
+    }
 
     //1st 2nd 3rd etc
     ctx.fillStyle = "white";
@@ -100,10 +104,10 @@ async function drawLeaderboard(best, pointUnit, pageLimit = 5, pageIdx = 0) {
     const ptUnitTextWidth = ctx.measureText(pointUnit).width;
     ctx.fillStyle = 'white'
     await renderEmojiText(ctx, pointUnit, { x: canvasWidth - ptUnitTextWidth - 69, y: yoff + 178 }, 40, 40)
-
     //name
     ctx.font = "60px Poppins Bold";
     let displayName = page[i].displayName;
+
     if (ctx.measureText(displayName).width + xoff + 580 > canvasWidth - ptTextWidth - 80) {
       while (ctx.measureText(displayName).width + xoff + 580 > canvasWidth - ptTextWidth - 95) {
         displayName = displayName.split('').slice(0, displayName.length - 1).join('');
@@ -160,7 +164,8 @@ async function getUsers(db, guildId) {
       //[userId, points] or ['721377130755391578', 102]
       users.push([user, allUsers[user].points]);
     }
-    users.sort((a, b) => b[1] - a[1]); //highest to lowest is b-a
+    users.sort((a, b) => b[1] - a[1])
+users = users.filter(a => Math.abs(a[1]) >= 1000); //highest to lowest is b-a
 
     const json = JSON.stringify(users);
     fs.writeFile(loc, json, 'utf8', () => console.log(`Successfully wrote leaderboard of guild ${guildId}`));
@@ -284,10 +289,10 @@ async function execute(interaction, db) {
         break;
     }
     if (newIdx != pageIdx) {
-      try { await i.editReply({ content: `Hold on... (rendering page ${newIdx + 1}) https://media.giphy.com/media/sCeDVONTypmVy/giphy.gif`, files: [], controls: [] }) } catch (e) { }
-      if (!pages[newIdx])
+      if (!pages[newIdx]) {
+        try { await i.editReply({ content: `Hold on... (rendering page ${newIdx + 1}) https://media.giphy.com/media/sCeDVONTypmVy/giphy.gif`, files: [], controls: [] }) } catch (e) { }
         pages[newIdx] = await drawLeaderboard(best, await db.readPointUnit(interaction.guildId), pageLimit, newIdx);
-
+      }
       pageIdx = newIdx;
     }
 
