@@ -211,7 +211,7 @@ async function execute(interaction, db) {
       id,
       points,
       pointName,
-      username: `${user.tag}`,
+      username: user.discriminator == '0' ? `@${user.username}`  : `${user.tag}`,
       displayName: `${member.displayName}`,
       avatar: user.avatarURL({ format: "png", size: 512 }),
       bestRole:

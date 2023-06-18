@@ -143,6 +143,7 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
     withPresences: true
   });
   const name = member.displayName;
+  console.log(user, member);
   const avatarURL = user.displayAvatarURL({
     format: "png",
     size: 512
@@ -254,8 +255,11 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
   fontHeight = 36;
   ctx.font = `${fontHeight}px ${fontTertiary} `;
   ctx.fillStyle = "rgba(175,175, 175, 1)";
+  if (user.discriminator == '0') {
+    await renderEmojiText(ctx, `@${user.username}`, {x: 502, y: 172}, fontHeight);
+  } else {
   await renderEmojiText(ctx, tagName, { x: 502, y: 172 }, fontHeight);
-  // ctx.fillText(tagName, 502, 172 + fontHeight);
+  }// ctx.fillText(tagName, 502, 172 + fontHeight);
 
   fontHeight = 36;
   ctx.fillStyle = "rgba(255,255,255,1)";
