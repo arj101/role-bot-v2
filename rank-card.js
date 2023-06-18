@@ -143,7 +143,6 @@ async function createRankCard(interaction, user, points, roles, pointUnit) {
     withPresences: true
   });
   const name = member.displayName;
-  console.log(user, member);
   const avatarURL = user.displayAvatarURL({
     format: "png",
     size: 512
